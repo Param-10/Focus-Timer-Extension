@@ -7,11 +7,29 @@ function startFocusSession(duration) {
 
   function updateTimer() {
     let timeLeft = Math.round((endTime - Date.now()) / 1000);
-    
+
     if (timeLeft <= 0) {
       notifyTimerComplete("Focus Session Complete", "Time for a break!");
       updateStats(10); // Add points for completed focus session
+      // Ensure to update timer display to show 00:00
+      chrome.runtime.sendMessage({
+        action: "updateTimer",
+        time: "0:00"
+      });
     } else {
+      let minutes = Math.floor(timeLeft / 60);
+      let seconds = timeLeft % 60;
+      let display = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      
+      // Debugging output
+      console.log(`Focus Timer - Minutes: ${minutes}, Seconds: ${seconds}`);
+      
+      // Send message to update popup
+      chrome.runtime.sendMessage({
+        action: "updateTimer",
+        time: display
+      });
+
       currentTimer = setTimeout(updateTimer, 1000);
     }
   }
@@ -23,16 +41,32 @@ function startBreak(duration) {
   clearTimeout(currentTimer);
   let endTime = Date.now() + duration * 1000;
 
-  function updateTimer(timeLeft) {
-    let minutes = Math.floor(timeLeft / 60);
-    let seconds = timeLeft % 60;
-    let display = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-    
-    // Send message to update popup
-    chrome.runtime.sendMessage({
-      action: "updateTimer",
-      time: display
-    });
+  function updateTimer() {
+    let timeLeft = Math.round((endTime - Date.now()) / 1000);
+
+    if (timeLeft <= 0) {
+      notifyTimerComplete("Break Time Over", "Back to work!");
+      // Ensure to update timer display to show 00:00
+      chrome.runtime.sendMessage({
+        action: "updateTimer",
+        time: "0:00"
+      });
+    } else {
+      let minutes = Math.floor(timeLeft / 60);
+      let seconds = timeLeft % 60;
+      let display = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+      
+      // Debugging output
+      console.log(`Break Timer - Minutes: ${minutes}, Seconds: ${seconds}`);
+      
+      // Send message to update popup
+      chrome.runtime.sendMessage({
+        action: "updateTimer",
+        time: display
+      });
+
+      currentTimer = setTimeout(updateTimer, 1000);
+    }
   }
 
   updateTimer();
@@ -53,7 +87,8 @@ const POINTS_PER_LEVEL = 100;
 
 function updateStats(points) {
   chrome.storage.sync.get(['points', 'level'], (data) => {
-    let newPoints = data.points + points;
+    let currentPoints = data.points || 0;
+    let newPoints = currentPoints + points;
     let newLevel = Math.floor(newPoints / POINTS_PER_LEVEL) + 1;
     
     chrome.storage.sync.set({points: newPoints, level: newLevel}, () => {
@@ -64,10 +99,10 @@ function updateStats(points) {
 
 function checkAchievements(points, level) {
   const achievements = [
-    {name: "Focus Novice", requirement: 50, achieved: false},
-    {name: "Focus Intermediate", requirement: 200, achieved: false},
-    {name: "Focus Expert", requirement: 500, achieved: false},
-    {name: "Focus Master", requirement: 1000, achieved: false}
+    {name: "Focus Novice", requirement: 50},
+    {name: "Focus Intermediate", requirement: 200},
+    {name: "Focus Expert", requirement: 500},
+    {name: "Focus Master", requirement: 1000}
   ];
 
   chrome.storage.sync.get(['achievements'], (data) => {
@@ -145,13 +180,13 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "startFocus") {
     chrome.storage.sync.get('focusDuration', (data) => {
-      startFocusSession(data.focusDuration);
+      startFocusSession(data.focusDuration || 25 * 60);
       sendResponse({status: "Focus session started"});
     });
     return true;  // Indicates that the response is sent asynchronously
   } else if (request.action === "startBreak") {
     chrome.storage.sync.get('breakDuration', (data) => {
-      startBreak(data.breakDuration);
+      startBreak(data.breakDuration || 5 * 60);
       sendResponse({status: "Break started"});
     });
     return true;  // Indicates that the response is sent asynchronously
