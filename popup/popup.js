@@ -1,6 +1,8 @@
 let timerDisplay = document.getElementById('timer');
 let startFocusBtn = document.getElementById('startFocus');
 let startBreakBtn = document.getElementById('startBreak');
+let pauseBtn = document.getElementById('pause');
+let resumeBtn = document.getElementById('resume');
 let levelDisplay = document.getElementById('level');
 let pointsDisplay = document.getElementById('points');
 let achievementList = document.getElementById('achievementList');
@@ -35,35 +37,57 @@ function startTimer(duration, timerName) {
   }, response => {
     if (chrome.runtime.lastError) {
       console.error('Runtime error:', chrome.runtime.lastError.message);
-      // Handle the error, maybe show a message to the user
       timerDisplay.textContent = 'Error starting timer';
-    } else if (response && response.error) {
-      console.error('Response error:', response.error);
-      timerDisplay.textContent = 'Error: ' + response.error;
     } else {
-      // Timer started successfully
       console.log('Timer started:', timerName);
       timerDisplay.textContent = `${Math.floor(duration / 60)}:00`;
     }
   });
 }
 
+function pauseTimer() {
+  chrome.runtime.sendMessage({ action: 'pause' }, response => {
+    if (chrome.runtime.lastError) {
+      console.error('Runtime error:', chrome.runtime.lastError.message);
+    } else {
+      console.log('Timer paused');
+    }
+  });
+}
+
+function resumeTimer() {
+  chrome.runtime.sendMessage({ action: 'resume' }, response => {
+    if (chrome.runtime.lastError) {
+      console.error('Runtime error:', chrome.runtime.lastError.message);
+    } else {
+      console.log('Timer resumed');
+    }
+  });
+}
+
 startFocusBtn.addEventListener('click', () => {
   chrome.storage.sync.get('focusDuration', (data) => {
-    startTimer(data.focusDuration, 'focusTimer');
+    startTimer(data.focusDuration || 25 * 60, 'focusTimer');
   });
 });
 
 startBreakBtn.addEventListener('click', () => {
   chrome.storage.sync.get('breakDuration', (data) => {
-    startTimer(data.breakDuration, 'breakTimer');
+    startTimer(data.breakDuration || 5 * 60, 'breakTimer');
   });
+});
+
+pauseBtn.addEventListener('click', () => {
+  pauseTimer();
+});
+
+resumeBtn.addEventListener('click', () => {
+  resumeTimer();
 });
 
 // Call updateStats when the popup is opened
 document.addEventListener('DOMContentLoaded', () => {
   updateStats();
-  // Initialize timer display
   chrome.storage.sync.get('focusDuration', (data) => {
     timerDisplay.textContent = `${Math.floor(data.focusDuration / 60)}:00`;
   });

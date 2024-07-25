@@ -1,35 +1,30 @@
-// Timer functionality
 let currentTimer;
+let paused = false;
+let remainingTime = 0;
 
 function startFocusSession(duration) {
   clearTimeout(currentTimer);
-  let endTime = Date.now() + duration * 1000;
+  paused = false;
+  remainingTime = duration * 1000;
+  let endTime = Date.now() + remainingTime;
 
   function updateTimer() {
-    let timeLeft = Math.round((endTime - Date.now()) / 1000);
+    if (paused) {
+      remainingTime = endTime - Date.now();
+      currentTimer = setTimeout(updateTimer, 1000);
+      return;
+    }
 
+    let timeLeft = Math.round((endTime - Date.now()) / 1000);
+    
     if (timeLeft <= 0) {
       notifyTimerComplete("Focus Session Complete", "Time for a break!");
       updateStats(10); // Add points for completed focus session
-      // Ensure to update timer display to show 00:00
-      chrome.runtime.sendMessage({
-        action: "updateTimer",
-        time: "0:00"
-      });
     } else {
-      let minutes = Math.floor(timeLeft / 60);
-      let seconds = timeLeft % 60;
-      let display = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-      
-      // Debugging output
-      console.log(`Focus Timer - Minutes: ${minutes}, Seconds: ${seconds}`);
-      
-      // Send message to update popup
       chrome.runtime.sendMessage({
         action: "updateTimer",
-        time: display
+        time: formatTime(timeLeft)
       });
-
       currentTimer = setTimeout(updateTimer, 1000);
     }
   }
@@ -39,37 +34,51 @@ function startFocusSession(duration) {
 
 function startBreak(duration) {
   clearTimeout(currentTimer);
-  let endTime = Date.now() + duration * 1000;
+  paused = false;
+  remainingTime = duration * 1000;
+  let endTime = Date.now() + remainingTime;
 
   function updateTimer() {
-    let timeLeft = Math.round((endTime - Date.now()) / 1000);
+    if (paused) {
+      remainingTime = endTime - Date.now();
+      currentTimer = setTimeout(updateTimer, 1000);
+      return;
+    }
 
+    let timeLeft = Math.round((endTime - Date.now()) / 1000);
+    
     if (timeLeft <= 0) {
       notifyTimerComplete("Break Time Over", "Back to work!");
-      // Ensure to update timer display to show 00:00
-      chrome.runtime.sendMessage({
-        action: "updateTimer",
-        time: "0:00"
-      });
     } else {
-      let minutes = Math.floor(timeLeft / 60);
-      let seconds = timeLeft % 60;
-      let display = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-      
-      // Debugging output
-      console.log(`Break Timer - Minutes: ${minutes}, Seconds: ${seconds}`);
-      
-      // Send message to update popup
       chrome.runtime.sendMessage({
         action: "updateTimer",
-        time: display
+        time: formatTime(timeLeft)
       });
-
       currentTimer = setTimeout(updateTimer, 1000);
     }
   }
 
   updateTimer();
+}
+
+function pauseTimer() {
+  paused = true;
+}
+
+function resumeTimer() {
+  paused = false;
+  let endTime = Date.now() + remainingTime;
+  currentTimer = setTimeout(() => {
+    if (remainingTime > 0) {
+      startFocusSession(Math.round(remainingTime / 1000));
+    }
+  }, remainingTime);
+}
+
+function formatTime(seconds) {
+  let minutes = Math.floor(seconds / 60);
+  let secs = seconds % 60;
+  return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
 function notifyTimerComplete(title, message) {
@@ -81,14 +90,9 @@ function notifyTimerComplete(title, message) {
   });
 }
 
-// Gamification functionality
-const POINTS_PER_FOCUS = 10;
-const POINTS_PER_LEVEL = 100;
-
 function updateStats(points) {
   chrome.storage.sync.get(['points', 'level'], (data) => {
-    let currentPoints = data.points || 0;
-    let newPoints = currentPoints + points;
+    let newPoints = data.points + points;
     let newLevel = Math.floor(newPoints / POINTS_PER_LEVEL) + 1;
     
     chrome.storage.sync.set({points: newPoints, level: newLevel}, () => {
@@ -99,10 +103,10 @@ function updateStats(points) {
 
 function checkAchievements(points, level) {
   const achievements = [
-    {name: "Focus Novice", requirement: 50},
-    {name: "Focus Intermediate", requirement: 200},
-    {name: "Focus Expert", requirement: 500},
-    {name: "Focus Master", requirement: 1000}
+    {name: "Focus Novice", requirement: 50, achieved: false},
+    {name: "Focus Intermediate", requirement: 200, achieved: false},
+    {name: "Focus Expert", requirement: 500, achieved: false},
+    {name: "Focus Master", requirement: 1000, achieved: false}
   ];
 
   chrome.storage.sync.get(['achievements'], (data) => {
@@ -179,17 +183,17 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 // In background-core.js
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "startFocus") {
-    chrome.storage.sync.get('focusDuration', (data) => {
-      startFocusSession(data.focusDuration || 25 * 60);
-      sendResponse({status: "Focus session started"});
-    });
-    return true;  // Indicates that the response is sent asynchronously
+    startFocusSession(request.duration);
+    sendResponse({status: "Focus session started"});
   } else if (request.action === "startBreak") {
-    chrome.storage.sync.get('breakDuration', (data) => {
-      startBreak(data.breakDuration || 5 * 60);
-      sendResponse({status: "Break started"});
-    });
-    return true;  // Indicates that the response is sent asynchronously
+    startBreak(request.duration);
+    sendResponse({status: "Break started"});
+  } else if (request.action === "pause") {
+    pauseTimer();
+    sendResponse({status: "Timer paused"});
+  } else if (request.action === "resume") {
+    resumeTimer();
+    sendResponse({status: "Timer resumed"});
   }
 });
 

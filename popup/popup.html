@@ -1,22 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Mindful Focus</title>
   <link rel="stylesheet" type="text/css" href="popup.css">
 </head>
 <body>
-  <h1>Mindful Focus</h1>
   <div id="timer">25:00</div>
   <button id="startFocus">Start Focus</button>
   <button id="startBreak">Start Break</button>
-  <div id="stats">
-    <p>Level: <span id="level">1</span></p>
-    <p>Points: <span id="points">0</span></p>
-  </div>
-  <div id="achievements">
-    <h2>Achievements</h2>
-    <ul id="achievementList"></ul>
-  </div>
-  <script src="popup.js" type="module"></script>
+  <button id="pause">Pause</button>
+  <button id="resume">Resume</button>
+  <div id="level">Level: 1</div>
+  <div id="points">Points: 0</div>
+  <ul id="achievementList">
+    <!-- Achievements will be listed here -->
+  </ul>
+  <script src="popup.js"></script>
 </body>
 </html>

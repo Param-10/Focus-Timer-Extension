@@ -1,77 +1,123 @@
+/* General popup styling */
 body {
-    width: 300px;
-    font-family: Arial, sans-serif;
-    padding: 15px;
-    background-color: #f0f0f0;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  width: 300px;
+  background-color: #f4f4f4;
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Timer display */
+#timer {
+  font-size: 2.5em;
+  text-align: center;
+  margin: 20px 0;
+  color: #333;
+  animation: fadeIn 1s ease-out;
+}
+
+/* Button styling */
+button {
+  background-color: #007bff; /* Blue color */
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
+  margin: 5px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Button hover and active states */
+button:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  transform: scale(1.05);
+}
+
+button:active {
+  background-color: #00408a; /* Even darker blue on active */
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  transform: scale(0.95);
+}
+
+button:disabled {
+  background-color: #c0c0c0; /* Gray color */
+  cursor: not-allowed;
+}
+
+/* Specific button styles */
+#startFocus, #startBreak {
+  background-color: #28a745; /* Green color */
+}
+
+#startFocus:hover, #startBreak:hover {
+  background-color: #218838; /* Darker green on hover */
+}
+
+#startFocus:active, #startBreak:active {
+  background-color: #1e7e34; /* Even darker green on active */
+}
+
+#pause, #resume {
+  background-color: #ffc107; /* Yellow color */
+}
+
+#pause:hover, #resume:hover {
+  background-color: #e0a800; /* Darker yellow on hover */
+}
+
+#pause:active, #resume:active {
+  background-color: #d39e00; /* Even darker yellow on active */
+}
+
+/* Level and points display */
+#level, #points {
+  font-size: 1.5em;
+  text-align: center;
+  margin: 10px 0;
+  animation: slideIn 1s ease-out;
+}
+
+/* Achievement list */
+#achievementList {
+  list-style-type: none;
+  padding: 0;
+  margin: 10px 0;
+  width: 100%;
+}
+
+#achievementList li {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 10px;
+  animation: fadeIn 1s ease-out;
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
   }
-  
-  h1 {
-    text-align: center;
-    color: #333;
-    margin-bottom: 20px;
+  to {
+    opacity: 1;
   }
-  
-  #timer {
-    font-size: 36px;
-    text-align: center;
-    margin: 20px 0;
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
   }
-  
-  button {
-    display: block;
-    width: 100%;
-    padding: 10px;
-    margin: 10px 0;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: background-color 0.3s;
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
-  
-  button:hover {
-    background-color: #45a049;
-  }
-  
-  #stats {
-    margin-top: 20px;
-    padding: 10px;
-    background-color: #fff;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  
-  #stats p {
-    margin: 5px 0;
-    font-size: 14px;
-  }
-  
-  #achievements {
-    margin-top: 20px;
-  }
-  
-  #achievements h2 {
-    font-size: 18px;
-    color: #333;
-    margin-bottom: 10px;
-  }
-  
-  #achievementList {
-    list-style-type: none;
-    padding: 0;
-  }
-  
-  #achievementList li {
-    background-color: #fff;
-    margin-bottom: 5px;
-    padding: 8px;
-    border-radius: 3px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    font-size: 14px;
-  }
+}
