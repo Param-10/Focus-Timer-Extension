@@ -1,10 +1,12 @@
 let timerDisplay = document.getElementById('timer');
+let messageDisplay = document.getElementById('message');
 let startFocusBtn = document.getElementById('startFocus');
 let startBreakBtn = document.getElementById('startBreak');
 let pauseBtn = document.getElementById('pause');
 let resumeBtn = document.getElementById('resume');
 let resetBtn = document.getElementById('reset');
 
+let alertSound = new Audio(chrome.runtime.getURL('sounds/alert.mp3'));
 let timerName = ""; // To keep track of which timer is currently running
 
 function startTimer(duration, timerNameParam) {
@@ -15,10 +17,10 @@ function startTimer(duration, timerNameParam) {
     }, response => {
         if (chrome.runtime.lastError) {
             console.error('Runtime error:', chrome.runtime.lastError.message);
-            timerDisplay.textContent = 'Error starting timer';
+            if (timerDisplay) timerDisplay.textContent = 'Error starting timer';
         } else {
             console.log('Timer started:', timerNameParam);
-            timerDisplay.textContent = formatTime(duration);
+            if (timerDisplay) timerDisplay.textContent = formatTime(duration);
         }
     });
 }
@@ -52,7 +54,7 @@ function resetTimer() {
             chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
                 let defaultFocusTime = formatTime(data.focusDuration || 25 * 60);
                 let defaultBreakTime = formatTime(data.breakDuration || 5 * 60);
-                timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
+                if (timerDisplay) timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
             });
         }
     });
@@ -67,12 +69,14 @@ function formatTime(seconds) {
 startFocusBtn.addEventListener('click', () => {
     chrome.storage.sync.get('focusDuration', (data) => {
         startTimer(data.focusDuration || 25 * 60, 'focusTimer');
+        if (messageDisplay) messageDisplay.textContent = ''; // Clear any existing message
     });
 });
 
 startBreakBtn.addEventListener('click', () => {
     chrome.storage.sync.get('breakDuration', (data) => {
         startTimer(data.breakDuration || 5 * 60, 'breakTimer');
+        if (messageDisplay) messageDisplay.textContent = ''; // Clear any existing message
     });
 });
 
@@ -92,33 +96,37 @@ document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
         let defaultFocusTime = formatTime(data.focusDuration || 25 * 60);
         let defaultBreakTime = formatTime(data.breakDuration || 5 * 60);
-        timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
+        if (timerDisplay) {
+            timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
+        }
     });
 });
-// popup.js
-let alertSound = new Audio(chrome.runtime.getURL('sounds/alert.mp3'));
 
+// Function to play sound
 function playSound() {
     alertSound.play();
 }
 
-// Listen for messages from background script to play the sound
+// Listen for messages from background script to update the timer and play sound
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'playSound') {
         playSound();
         sendResponse({ status: 'sound played' });
-    }
-});
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === "updateTimer") {
-        timerDisplay.textContent = request.time;
+    } else if (request.action === "updateTimer") {
+        if (timerDisplay) {
+            timerDisplay.textContent = request.time;
+        }
     } else if (request.action === "timerComplete") {
-        chrome.notifications.create('timerComplete', {
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: 'Time is up!',
-            message: request.message
-        });
+        if (messageDisplay) {
+            messageDisplay.textContent = request.message;
+        }
+        playSound();
+
+        // Automatically start the next timer (focus or break)
+        if (timerName === 'focusTimer') {
+            startTimer(5 * 60, 'breakTimer'); // Start a 5-minute break
+        } else if (timerName === 'breakTimer') {
+            startTimer(25 * 60, 'focusTimer'); // Start a 25-minute focus session
+        }
     }
 });
