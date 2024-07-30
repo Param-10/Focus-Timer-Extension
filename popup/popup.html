@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Popup</title>
+    <title>Focus Timer</title>
     <link rel="stylesheet" href="popup.css">
 </head>
 
@@ -13,11 +13,11 @@
         <div id="timer">25:00</div>
         <div id="stats">
             <div id="level-container">
-                <label for="level">Level:</label>
+                <label for="level">Level</label>
                 <div id="level">1</div>
             </div>
             <div id="points-container">
-                <label for="points">Points:</label>
+                <label for="points">Points</label>
                 <div id="points">0</div>
             </div>
         </div>
@@ -26,11 +26,12 @@
             <button id="startBreak">Start Break</button>
             <button id="pause">Pause</button>
             <button id="resume">Resume</button>
-        </div>
+            <button id="reset">Reset</button> </div>
         <ul id="achievementList">
             <li>No achievements yet</li>
         </ul>
     </div>
+    <audio id="alertSound" src="alert.mp3" preload="auto"></audio>
     <script src="popup.js"></script>
 </body>
 
