@@ -9,7 +9,7 @@
         "alarms"
     ],
     "background": {
-        "service_worker": "background-wrap.js"
+        "service_worker": "background-core.js"
     },
     "action": {
         "default_popup": "popup/popup.html",
