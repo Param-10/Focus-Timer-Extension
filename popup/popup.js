@@ -4,7 +4,6 @@ let startBreakBtn = document.getElementById('startBreak');
 let pauseBtn = document.getElementById('pause');
 let resumeBtn = document.getElementById('resume');
 let resetBtn = document.getElementById('reset');
-let alertSound = document.getElementById('alertSound');
 
 let timerName = ""; // To keep track of which timer is currently running
 
@@ -96,15 +95,28 @@ document.addEventListener('DOMContentLoaded', () => {
         timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
     });
 });
+// popup.js
+let alertSound = new Audio(chrome.runtime.getURL('sounds/alert.mp3'));
+
+function playSound() {
+    alertSound.play();
+}
+
+// Listen for messages from background script to play the sound
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.action === 'playSound') {
+        playSound();
+        sendResponse({ status: 'sound played' });
+    }
+});
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === "updateTimer") {
         timerDisplay.textContent = request.time;
     } else if (request.action === "timerComplete") {
-        alertSound.play();
         chrome.notifications.create('timerComplete', {
             type: 'basic',
-            iconUrl: 'icon128.png',
+            iconUrl: 'icons/icon128.png',
             title: 'Time is up!',
             message: request.message
         });

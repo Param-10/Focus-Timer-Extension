@@ -7,6 +7,7 @@ let startTime; // Variable to track when the timer started
 const FOCUS_DURATION = 25 * 60 * 1000; // 25 minutes in milliseconds
 const BREAK_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
+// Function to start a focus session
 function startFocusSession(duration) {
     clearTimeout(currentTimer);
     paused = false;
@@ -16,9 +17,7 @@ function startFocusSession(duration) {
     let endTime = startTime + remainingTime;
 
     function updateTimer() {
-        if (paused) {
-            return;
-        }
+        if (paused) return;
 
         let timeLeft = Math.round((endTime - Date.now()) / 1000);
 
@@ -37,6 +36,7 @@ function startFocusSession(duration) {
     updateTimer();
 }
 
+// Function to start a break session
 function startBreak(duration) {
     clearTimeout(currentTimer);
     paused = false;
@@ -46,9 +46,7 @@ function startBreak(duration) {
     let endTime = startTime + remainingTime;
 
     function updateTimer() {
-        if (paused) {
-            return;
-        }
+        if (paused) return;
 
         let timeLeft = Math.round((endTime - Date.now()) / 1000);
 
@@ -66,12 +64,14 @@ function startBreak(duration) {
     updateTimer();
 }
 
+// Function to pause the timer
 function pauseTimer() {
     paused = true;
     clearTimeout(currentTimer);
     remainingTime = Math.max(0, remainingTime - (Date.now() - startTime));
 }
 
+// Function to resume the timer
 function resumeTimer() {
     if (!paused) return; // Don't resume if not paused
 
@@ -87,6 +87,7 @@ function resumeTimer() {
     }
 }
 
+// Function to reset the timer
 function resetTimer() {
     clearTimeout(currentTimer);
     paused = false;
@@ -104,21 +105,28 @@ function resetTimer() {
     timerName = ""; // Clear the timer name to indicate no active timer
 }
 
+// Function to format time into MM:SS format
 function formatTime(seconds) {
     let minutes = Math.floor(seconds / 60);
     let secs = seconds % 60;
     return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
+// Function to send a notification when the timer completes
 function notifyTimerComplete(title, message) {
     chrome.notifications.create({
         type: "basic",
-        iconUrl: "icon128.png",
+        iconUrl: "icons/icon128.png", // Make sure this path is correct
         title: title,
         message: message
     });
+    // Send a message to content script or popup to play sound
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'playSound' });
+    });
 }
 
+// Listener for messages from other parts of the extension
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startFocus') {
         startFocusSession(request.duration);

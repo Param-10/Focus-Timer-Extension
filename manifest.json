@@ -5,8 +5,7 @@
     "description": "A focus timer with notifications and sound alerts",
     "permissions": [
         "storage",
-        "notifications",
-        "alarms"
+        "notifications"
     ],
     "background": {
         "service_worker": "background-core.js"
