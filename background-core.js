@@ -2,18 +2,22 @@ let currentTimer;
 let paused = false;
 let remainingTime = 0;
 let timerName = ""; // To keep track of which timer is currently running
+let startTime; // New variable to track when the timer started
+
+const FOCUS_DURATION = 25 * 60 * 1000; // 25 minutes in milliseconds
+const BREAK_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const POINTS_PER_LEVEL = 100; // Assuming this constant is defined somewhere
 
 function startFocusSession(duration) {
     clearTimeout(currentTimer);
     paused = false;
     remainingTime = duration * 1000;
     timerName = "focusTimer";
-    let endTime = Date.now() + remainingTime;
+    startTime = Date.now();
+    let endTime = startTime + remainingTime;
 
     function updateTimer() {
         if (paused) {
-            remainingTime = endTime - Date.now();
-            currentTimer = setTimeout(updateTimer, 1000);
             return;
         }
 
@@ -40,12 +44,11 @@ function startBreak(duration) {
     paused = false;
     remainingTime = duration * 1000;
     timerName = "breakTimer";
-    let endTime = Date.now() + remainingTime;
+    startTime = Date.now();
+    let endTime = startTime + remainingTime;
 
     function updateTimer() {
         if (paused) {
-            remainingTime = endTime - Date.now();
-            currentTimer = setTimeout(updateTimer, 1000);
             return;
         }
 
@@ -67,28 +70,40 @@ function startBreak(duration) {
 
 function pauseTimer() {
     paused = true;
+    clearTimeout(currentTimer);
+    remainingTime = Math.max(0, remainingTime - (Date.now() - startTime));
 }
 
 function resumeTimer() {
+    if (!paused) return; // Don't resume if not paused
+
     paused = false;
-    let endTime = Date.now() + remainingTime;
-    currentTimer = setTimeout(() => {
-        if (remainingTime > 0) {
-            if (timerName === "focusTimer") {
-                startFocusSession(Math.round(remainingTime / 1000));
-            } else if (timerName === "breakTimer") {
-                startBreak(Math.round(remainingTime / 1000));
-            }
+    startTime = Date.now();
+
+    if (remainingTime > 0) {
+        if (timerName === "focusTimer") {
+            startFocusSession(Math.round(remainingTime / 1000));
+        } else if (timerName === "breakTimer") {
+            startBreak(Math.round(remainingTime / 1000));
         }
-    }, remainingTime);
+    }
 }
 
 function resetTimer() {
     clearTimeout(currentTimer);
     paused = false;
     remainingTime = 0;
+
+    // Determine which timer was running and reset to its default
+    if (timerName === "focusTimer") {
+        remainingTime = FOCUS_DURATION;
+        chrome.runtime.sendMessage({ action: 'updateTimer', time: formatTime(FOCUS_DURATION / 1000) });
+    } else if (timerName === "breakTimer") {
+        remainingTime = BREAK_DURATION;
+        chrome.runtime.sendMessage({ action: 'updateTimer', time: formatTime(BREAK_DURATION / 1000) });
+    }
+
     timerName = ""; // Clear the timer name to indicate no active timer
-    chrome.runtime.sendMessage({ action: 'updateTimer', time: '00:00' }); // Reset timer display
 }
 
 function formatTime(seconds) {
@@ -151,13 +166,20 @@ function notifyAchievement(achievementName) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startFocus') {
         startFocusSession(request.duration);
+        sendResponse({ status: 'Focus session started' });
     } else if (request.action === 'startBreak') {
         startBreak(request.duration);
+        sendResponse({ status: 'Break started' });
     } else if (request.action === 'pause') {
         pauseTimer();
+        sendResponse({ status: 'Timer paused' });
     } else if (request.action === 'resume') {
         resumeTimer();
+        sendResponse({ status: 'Timer resumed' });
     } else if (request.action === 'reset') {
         resetTimer();
+        sendResponse({ status: 'Timer reset' });
     }
+    // Ensure that sendResponse is called
+    return true; // Keep the message channel open for asynchronous response
 });

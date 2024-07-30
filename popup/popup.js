@@ -9,6 +9,8 @@ let pointsDisplay = document.getElementById('points');
 let achievementList = document.getElementById('achievementList');
 let alertSound = document.getElementById('alertSound');
 
+let timerName = ""; // To keep track of which timer is currently running
+
 function updateStats() {
     chrome.storage.sync.get(['level', 'points', 'achievements'], (data) => {
         levelDisplay.textContent = data.level || 1;
@@ -32,17 +34,18 @@ function updateAchievements(achievements) {
     }
 }
 
-function startTimer(duration, timerName) {
+function startTimer(duration, timerNameParam) {
+    timerName = timerNameParam; // Set the timerName to keep track of which timer is running
     chrome.runtime.sendMessage({
-        action: timerName === 'focusTimer' ? 'startFocus' : 'startBreak',
+        action: timerNameParam === 'focusTimer' ? 'startFocus' : 'startBreak',
         duration: duration
     }, response => {
         if (chrome.runtime.lastError) {
             console.error('Runtime error:', chrome.runtime.lastError.message);
             timerDisplay.textContent = 'Error starting timer';
         } else {
-            console.log('Timer started:', timerName);
-            timerDisplay.textContent = `${Math.floor(duration / 60)}:00`;
+            console.log('Timer started:', timerNameParam);
+            timerDisplay.textContent = formatTime(duration);
         }
     });
 }
@@ -73,9 +76,19 @@ function resetTimer() {
             console.error('Runtime error:', chrome.runtime.lastError.message);
         } else {
             console.log('Timer reset');
-            timerDisplay.textContent = '25:00'; // or any default time
+            chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
+                let defaultFocusTime = formatTime(data.focusDuration || 25 * 60);
+                let defaultBreakTime = formatTime(data.breakDuration || 5 * 60);
+                timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
+            });
         }
     });
+}
+
+function formatTime(seconds) {
+    let minutes = Math.floor(seconds / 60);
+    let secs = seconds % 60;
+    return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
 startFocusBtn.addEventListener('click', () => {
@@ -104,8 +117,10 @@ resetBtn.addEventListener('click', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     updateStats();
-    chrome.storage.sync.get('focusDuration', (data) => {
-        timerDisplay.textContent = `${Math.floor(data.focusDuration / 60)}:00`;
+    chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
+        let defaultFocusTime = formatTime(data.focusDuration || 25 * 60);
+        let defaultBreakTime = formatTime(data.breakDuration || 5 * 60);
+        timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
     });
 });
 
@@ -119,8 +134,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             iconUrl: 'icon128.png',
             title: 'Time is up!',
             message: request.message
-        }, function() {
-            startTimer(5 * 60, 'breakTimer');
         });
     }
 });
