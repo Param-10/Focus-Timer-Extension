@@ -4,35 +4,9 @@ let startBreakBtn = document.getElementById('startBreak');
 let pauseBtn = document.getElementById('pause');
 let resumeBtn = document.getElementById('resume');
 let resetBtn = document.getElementById('reset');
-let levelDisplay = document.getElementById('level');
-let pointsDisplay = document.getElementById('points');
-let achievementList = document.getElementById('achievementList');
 let alertSound = document.getElementById('alertSound');
 
 let timerName = ""; // To keep track of which timer is currently running
-
-function updateStats() {
-    chrome.storage.sync.get(['level', 'points', 'achievements'], (data) => {
-        levelDisplay.textContent = data.level || 1;
-        pointsDisplay.textContent = data.points || 0;
-        updateAchievements(data.achievements || []);
-    });
-}
-
-function updateAchievements(achievements) {
-    achievementList.innerHTML = '';
-    if (Array.isArray(achievements) && achievements.length > 0) {
-        achievements.forEach(achievement => {
-            let li = document.createElement('li');
-            li.textContent = achievement;
-            achievementList.appendChild(li);
-        });
-    } else {
-        let li = document.createElement('li');
-        li.textContent = 'No achievements yet';
-        achievementList.appendChild(li);
-    }
-}
 
 function startTimer(duration, timerNameParam) {
     timerName = timerNameParam; // Set the timerName to keep track of which timer is running
@@ -116,7 +90,6 @@ resetBtn.addEventListener('click', () => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateStats();
     chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
         let defaultFocusTime = formatTime(data.focusDuration || 25 * 60);
         let defaultBreakTime = formatTime(data.breakDuration || 5 * 60);

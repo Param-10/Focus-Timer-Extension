@@ -2,11 +2,10 @@ let currentTimer;
 let paused = false;
 let remainingTime = 0;
 let timerName = ""; // To keep track of which timer is currently running
-let startTime; // New variable to track when the timer started
+let startTime; // Variable to track when the timer started
 
 const FOCUS_DURATION = 25 * 60 * 1000; // 25 minutes in milliseconds
 const BREAK_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-const POINTS_PER_LEVEL = 100; // Assuming this constant is defined somewhere
 
 function startFocusSession(duration) {
     clearTimeout(currentTimer);
@@ -25,7 +24,6 @@ function startFocusSession(duration) {
 
         if (timeLeft <= 0) {
             notifyTimerComplete("Focus Session Complete", "Time for a break!");
-            updateStats(10); // Add points for completed focus session
             startBreak(5 * 60); // Start a 5-minute break automatically
         } else {
             chrome.runtime.sendMessage({
@@ -118,48 +116,6 @@ function notifyTimerComplete(title, message) {
         iconUrl: "icon128.png",
         title: title,
         message: message
-    });
-}
-
-function updateStats(points) {
-    chrome.storage.sync.get(['points', 'level'], (data) => {
-        let newPoints = data.points + points;
-        let newLevel = Math.floor(newPoints / POINTS_PER_LEVEL) + 1;
-
-        chrome.storage.sync.set({ points: newPoints, level: newLevel }, () => {
-            checkAchievements(newPoints, newLevel);
-        });
-    });
-}
-
-function checkAchievements(points, level) {
-    const achievements = [
-        { name: "Focus Novice", requirement: 50, achieved: false },
-        { name: "Focus Intermediate", requirement: 200, achieved: false },
-        { name: "Focus Expert", requirement: 500, achieved: false },
-        { name: "Focus Master", requirement: 1000, achieved: false }
-    ];
-
-    chrome.storage.sync.get(['achievements'], (data) => {
-        let userAchievements = data.achievements || [];
-
-        achievements.forEach(achievement => {
-            if (points >= achievement.requirement && !userAchievements.includes(achievement.name)) {
-                userAchievements.push(achievement.name);
-                notifyAchievement(achievement.name);
-            }
-        });
-
-        chrome.storage.sync.set({ achievements: userAchievements });
-    });
-}
-
-function notifyAchievement(achievementName) {
-    chrome.notifications.create({
-        type: "basic",
-        iconUrl: "icon128.png",
-        title: "New Achievement!",
-        message: `You've earned the "${achievementName}" achievement!`
     });
 }
 
