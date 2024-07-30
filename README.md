@@ -11,7 +11,7 @@ A Chrome extension designed to help you manage focus and break sessions using a 
 
 ## Installation
 
-1. **Download the Extension**: [Download the latest release](https://example.com/latest-release.zip) or clone the repository.
+1. **Download the Extension**: [Download the latest release](https://github.com/Param-10/Mindful-Focus-Extension/blob/main/Mindful-Focus-Extension.zip) or clone the repository.
 
 2. **Load the Extension**:
    - Open Chrome and go to `chrome://extensions/`.
