@@ -60,6 +60,17 @@ label {
 }
 
 
+/* Button container */
+
+#buttons {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+
 /* Button styling */
 
 button {
@@ -73,6 +84,10 @@ button {
     cursor: pointer;
     transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
     margin: 5px;
+    width: 45%;
+    /* Fixed width for all buttons */
+    box-sizing: border-box;
+    /* Ensure padding and border are included in the width */
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
