@@ -22,6 +22,23 @@ body {
     border-radius: 15px;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
     border: 1px solid rgba(94, 231, 223, 0.18);
+    position: relative;
+    overflow: hidden;
+}
+
+
+/* Title styling */
+
+#title {
+    font-size: 1.8em;
+    text-align: center;
+    margin-top: 0;
+    margin-bottom: 20px;
+    color: #5ee7df;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    text-shadow: 0 0 10px rgba(94, 231, 223, 0.7);
+    font-weight: 500;
 }
 
 
@@ -30,58 +47,76 @@ body {
 #timer {
     font-size: 3.5em;
     text-align: center;
-    margin: 30px 0;
+    margin: 20px 0;
     color: #5ee7df;
     text-shadow: 0 0 10px rgba(94, 231, 223, 0.7);
     font-weight: 300;
     letter-spacing: 2px;
+    position: relative;
 }
 
 
 /* Button container */
 
 #buttons {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
     width: 100%;
     margin-bottom: 20px;
 }
 
 
+/* Reset button wrapper */
+
+.reset-wrapper {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+
 /* Button styling */
 
-#buttons button {
+button {
     background-color: rgba(94, 231, 223, 0.1);
     color: #5ee7df;
     border: 1px solid #5ee7df;
     border-radius: 5px;
-    padding: 12px 24px;
+    padding: 12px 0;
     font-size: 16px;
     font-family: 'Rajdhani', sans-serif;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin: 5px;
-    width: 45%;
+    width: 100%;
+    max-width: 140px;
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
 }
 
 
+/* Reset button specific styling */
+
+#reset {
+    width: 50%;
+}
+
+
 /* Button hover and active states */
 
-#buttons button:hover {
+button:hover {
     background-color: rgba(94, 231, 223, 0.2);
     box-shadow: 0 0 15px rgba(94, 231, 223, 0.5);
 }
 
-#buttons button:active {
+button:active {
     transform: scale(0.98);
     box-shadow: 0 0 10px rgba(94, 231, 223, 0.7);
 }
 
-#buttons button:disabled {
+button:disabled {
     background-color: rgba(94, 231, 223, 0.05);
     border-color: rgba(94, 231, 223, 0.3);
     color: rgba(94, 231, 223, 0.3);
@@ -91,7 +126,7 @@ body {
 
 /* Button glow effect */
 
-#buttons button::before {
+button::before {
     content: '';
     position: absolute;
     top: -50%;
@@ -103,7 +138,7 @@ body {
     transition: opacity 0.3s ease;
 }
 
-#buttons button:hover::before {
+button:hover::before {
     opacity: 1;
 }
 
@@ -152,4 +187,49 @@ body {
     filter: blur(15px);
     opacity: 0.5;
     z-index: -1;
+}
+
+
+/* Message styling */
+
+#message {
+    text-align: center;
+    margin: 10px 0;
+    font-size: 1em;
+    color: #5ee7df;
+    text-shadow: 0 0 5px rgba(94, 231, 223, 0.5);
+}
+
+
+/* Customization section */
+
+#customization {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.input-group {
+    margin-bottom: 10px;
+}
+
+#customization label {
+    display: block;
+    margin-bottom: 5px;
+    color: #5ee7df;
+}
+
+#customization input {
+    width: 60px;
+    padding: 5px;
+    background-color: rgba(94, 231, 223, 0.1);
+    border: 1px solid #5ee7df;
+    border-radius: 5px;
+    color: #5ee7df;
+    text-align: center;
+}
+
+#saveSettings {
+    margin-top: 10px;
+    width: 100%;
+    max-width: none;
 }

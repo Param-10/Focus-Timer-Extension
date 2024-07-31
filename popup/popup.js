@@ -5,6 +5,9 @@ let startBreakBtn = document.getElementById('startBreak');
 let pauseBtn = document.getElementById('pause');
 let resumeBtn = document.getElementById('resume');
 let resetBtn = document.getElementById('reset');
+let focusDurationInput = document.getElementById('focusDuration');
+let breakDurationInput = document.getElementById('breakDuration');
+let saveSettingsBtn = document.getElementById('saveSettings');
 
 let alertSound = new Audio(chrome.runtime.getURL('sounds/alert.mp3'));
 let timerName = ""; // To keep track of which timer is currently running
@@ -66,6 +69,22 @@ function formatTime(seconds) {
     return `${minutes}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
+function saveSettings() {
+    let focusDuration = parseInt(focusDurationInput.value) * 60; // Convert to seconds
+    let breakDuration = parseInt(breakDurationInput.value) * 60; // Convert to seconds
+
+    chrome.storage.sync.set({
+        focusDuration: focusDuration,
+        breakDuration: breakDuration
+    }, function() {
+        console.log('Settings saved');
+        // Update the timer display
+        if (timerDisplay) {
+            timerDisplay.textContent = formatTime(focusDuration);
+        }
+    });
+}
+
 startFocusBtn.addEventListener('click', () => {
     chrome.storage.sync.get('focusDuration', (data) => {
         startTimer(data.focusDuration || 25 * 60, 'focusTimer');
@@ -92,12 +111,18 @@ resetBtn.addEventListener('click', () => {
     resetTimer();
 });
 
+saveSettingsBtn.addEventListener('click', saveSettings);
+
 document.addEventListener('DOMContentLoaded', () => {
     chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
-        let defaultFocusTime = formatTime(data.focusDuration || 25 * 60);
-        let defaultBreakTime = formatTime(data.breakDuration || 5 * 60);
+        let defaultFocusTime = data.focusDuration || 25 * 60;
+        let defaultBreakTime = data.breakDuration || 5 * 60;
+
+        focusDurationInput.value = Math.floor(defaultFocusTime / 60);
+        breakDurationInput.value = Math.floor(defaultBreakTime / 60);
+
         if (timerDisplay) {
-            timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
+            timerDisplay.textContent = formatTime(defaultFocusTime);
         }
     });
 });
@@ -123,10 +148,12 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         playSound();
 
         // Automatically start the next timer (focus or break)
-        if (timerName === 'focusTimer') {
-            startTimer(5 * 60, 'breakTimer'); // Start a 5-minute break
-        } else if (timerName === 'breakTimer') {
-            startTimer(25 * 60, 'focusTimer'); // Start a 25-minute focus session
-        }
+        chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
+            if (timerName === 'focusTimer') {
+                startTimer(data.breakDuration || 5 * 60, 'breakTimer');
+            } else if (timerName === 'breakTimer') {
+                startTimer(data.focusDuration || 25 * 60, 'focusTimer');
+            }
+        });
     }
 });

@@ -3,9 +3,20 @@ let paused = false;
 let remainingTime = 0;
 let timerName = ""; // To keep track of which timer is currently running
 let startTime; // Variable to track when the timer started
+let pausedTime; // New variable to track when the timer was paused
 
-const FOCUS_DURATION = 25 * 60 * 1000; // 25 minutes in milliseconds
-const BREAK_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+let FOCUS_DURATION = 25 * 60 * 1000; // Default 25 minutes in milliseconds
+let BREAK_DURATION = 5 * 60 * 1000; // Default 5 minutes in milliseconds
+
+function updateDurations() {
+    chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
+        FOCUS_DURATION = (data.focusDuration || 25 * 60) * 1000;
+        BREAK_DURATION = (data.breakDuration || 5 * 60) * 1000;
+    });
+}
+
+// Call this function when the background script starts
+updateDurations();
 
 function startFocusSession(duration) {
     clearTimeout(currentTimer);
@@ -27,12 +38,11 @@ function startFocusSession(duration) {
                 action: "timerComplete",
                 message: "Focus Session Complete! Time for a break!"
             });
-            // Set remaining time for break but do not start it automatically
             chrome.runtime.sendMessage({
                 action: 'updateTimer',
-                time: formatTime(5 * 60) // Show the break time
+                time: formatTime(BREAK_DURATION / 1000) // Use updated BREAK_DURATION
             });
-            remainingTime = 5 * 60; // Set break time
+            remainingTime = BREAK_DURATION / 1000; // Use updated BREAK_DURATION
         } else {
             chrome.runtime.sendMessage({
                 action: "updateTimer",
@@ -65,12 +75,11 @@ function startBreak(duration) {
                 action: "timerComplete",
                 message: "Break Time Over! Back to work!"
             });
-            // Set remaining time for focus but do not start it automatically
             chrome.runtime.sendMessage({
                 action: 'updateTimer',
-                time: formatTime(25 * 60) // Show the focus time
+                time: formatTime(FOCUS_DURATION / 1000) // Use updated FOCUS_DURATION
             });
-            remainingTime = 25 * 60; // Set focus time
+            remainingTime = FOCUS_DURATION / 1000; // Use updated FOCUS_DURATION
         } else {
             chrome.runtime.sendMessage({
                 action: "updateTimer",
@@ -83,77 +92,41 @@ function startBreak(duration) {
     updateTimer();
 }
 
-function startTimer(duration, name) {
-    clearInterval(currentTimer);
-    timerDuration = duration;
-    timerName = name;
-    isPaused = false;
-    remainingTime = duration;
-
-    currentTimer = setInterval(() => {
-        if (!isPaused) {
-            remainingTime--;
-            chrome.runtime.sendMessage({
-                action: 'updateTimer',
-                time: formatTime(remainingTime)
-            });
-
-            if (remainingTime <= 0) {
-                clearInterval(currentTimer);
-                chrome.runtime.sendMessage({
-                    action: 'timerComplete',
-                    message: name === 'focusTimer' ? 'Focus session complete! Time for a break.' : 'Break time over! Time to focus.'
-                });
-
-                // Set remaining time for the other timer but do not start it automatically
-                if (name === 'focusTimer') {
-                    chrome.runtime.sendMessage({
-                        action: 'updateTimer',
-                        time: formatTime(5 * 60) // Show the break time
-                    });
-                    remainingTime = 5 * 60; // Set break time
-                } else if (name === 'breakTimer') {
-                    chrome.runtime.sendMessage({
-                        action: 'updateTimer',
-                        time: formatTime(25 * 60) // Show the focus time
-                    });
-                    remainingTime = 25 * 60; // Set focus time
-                }
-            }
-        }
-    }, 1000);
-}
-
 function pauseTimer() {
     paused = true;
+    clearTimeout(currentTimer);
+    pausedTime = Date.now();
+    remainingTime = Math.max(0, remainingTime - (pausedTime - startTime));
 }
 
 function resumeTimer() {
     if (!paused) return; // Don't resume if not paused
 
     paused = false;
+    let pauseDuration = Date.now() - pausedTime;
     startTime = Date.now();
 
     if (remainingTime > 0) {
         if (timerName === "focusTimer") {
-            startFocusSession(Math.round(remainingTime / 1000));
+            startFocusSession(Math.ceil(remainingTime / 1000));
         } else if (timerName === "breakTimer") {
-            startBreak(Math.round(remainingTime / 1000));
+            startBreak(Math.ceil(remainingTime / 1000));
         }
     }
 }
 
 function resetTimer() {
-    clearInterval(currentTimer);
+    clearTimeout(currentTimer);
     paused = false;
     remainingTime = 0;
 
-    // Determine which timer was running and reset to its default
+    updateDurations(); // Update durations before resetting
+
     if (timerName === "focusTimer") {
-        remainingTime = FOCUS_DURATION;
+        remainingTime = FOCUS_DURATION / 1000;
         chrome.runtime.sendMessage({ action: 'updateTimer', time: formatTime(FOCUS_DURATION / 1000) });
     } else if (timerName === "breakTimer") {
-        remainingTime = BREAK_DURATION;
+        remainingTime = BREAK_DURATION / 1000;
         chrome.runtime.sendMessage({ action: 'updateTimer', time: formatTime(BREAK_DURATION / 1000) });
     }
 
@@ -183,8 +156,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         resetTimer();
         sendResponse({ status: 'Timer reset' });
     } else if (request.action === 'getTimerStatus') {
-        let timeLeft = Math.round(remainingTime / 1000);
+        let timeLeft = Math.round(remainingTime);
         sendResponse({ time: formatTime(timeLeft) });
     }
     return true; // Keep the message channel open for asynchronous response
+});
+
+// Listen for changes in storage
+chrome.storage.onChanged.addListener((changes, namespace) => {
+    if (namespace === 'sync' && (changes.focusDuration || changes.breakDuration)) {
+        updateDurations();
+    }
 });
