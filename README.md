@@ -6,8 +6,11 @@ A Chrome extension designed to help you manage focus and break sessions using a 
 
 - **Focus Timer**: Set and start a focus timer for productivity sessions.
 - **Break Timer**: Set and start a break timer to ensure regular breaks.
+- **Customizable Durations**: Set your preferred focus and break durations.
 - **Sound Alerts**: Play a sound when a timer completes.
 - **Popup Display**: View and control timers from the extension's popup.
+- **Pause/Resume**: Ability to pause and resume ongoing timers.
+- **Reset**: Reset the timer to its default state.
 
 ## Installation
 
@@ -39,17 +42,30 @@ A Chrome extension designed to help you manage focus and break sessions using a 
 4. **Reset Timer**:
    - Click "Reset" to reset the current timer to its default duration.
 
+5. **Customize Timer Durations**:
+   - Enter your preferred focus and break durations in minutes.
+   - Click "Save Settings" to apply the new durations.
+
 ## Configuration
 
-- **Focus Duration**: Default is 25 minutes.
-- **Break Duration**: Default is 5 minutes.
+- **Default Focus Duration**: 25 minutes.
+- **Default Break Duration**: 5 minutes.
 
-To change the default durations, update the `focusDuration` and `breakDuration` values in the extension's storage.
+You can customize these durations directly in the extension popup.
+
+## Styling
+
+The extension features a sleek, sci-fi inspired design with:
+- A dark background with gradient effects
+- Glowing cyan text and buttons
+- Holographic timer display
+- Animated scan lines for a futuristic feel
 
 ## Troubleshooting
 
 - **Notification Issues**: Ensure that notifications are enabled for Chrome and that you have the appropriate permissions.
-- **Sound Not Playing**: Check the path to the sound file and ensure it's correctly referenced in the extension.
+- **Sound Not Playing**: Check that your system's sound is on and not muted.
+- **Timer Not Updating**: Refresh the extension by right-clicking the icon and selecting "Reload".
 
 ## Contributing
 
@@ -68,3 +84,5 @@ This project is licensed under the [MIT License](LICENSE).
 For any questions or feedback, please contact [Paramveer Singh](mailto:bheleparamveer@gmail.com).
 
 ---
+
+Enjoy your focused and mindful work sessions with the Mindful Timer Extension!
