@@ -3,25 +3,36 @@ let paused = false;
 let remainingTime = 0;
 let timerName = ""; // To keep track of which timer is currently running
 let startTime; // Variable to track when the timer started
-let pausedTime; // New variable to track when the timer was paused
+let pausedTime; // Variable to track when the timer was paused
 
 let FOCUS_DURATION = 25 * 60 * 1000; // Default 25 minutes in milliseconds
 let BREAK_DURATION = 5 * 60 * 1000; // Default 5 minutes in milliseconds
 
 function updateDurations() {
     chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
-        FOCUS_DURATION = (data.focusDuration || 25 * 60) * 1000;
-        BREAK_DURATION = (data.breakDuration || 5 * 60) * 1000;
+        FOCUS_DURATION = (data.focusDuration || 25 * 60) * 1000; // Convert to milliseconds
+        BREAK_DURATION = (data.breakDuration || 5 * 60) * 1000; // Convert to milliseconds
     });
 }
 
 // Call this function when the background script starts
 updateDurations();
 
+function showNotification(title, message) {
+    chrome.notifications.create({
+        type: 'basic',
+        iconUrl: 'icons/icon128.png', // Ensure you have an icon.png in your extension directory
+        title: title,
+        message: message,
+        priority: 2,
+        silent: false // Play default notification sound
+    });
+}
+
 function startFocusSession(duration) {
     clearTimeout(currentTimer);
     paused = false;
-    remainingTime = duration * 1000;
+    remainingTime = duration * 1000; // Convert to milliseconds
     timerName = "focusTimer";
     startTime = Date.now();
     let endTime = startTime + remainingTime;
@@ -38,11 +49,9 @@ function startFocusSession(duration) {
                 action: "timerComplete",
                 message: "Focus Session Complete! Time for a break!"
             });
-            chrome.runtime.sendMessage({
-                action: 'updateTimer',
-                time: formatTime(BREAK_DURATION / 1000) // Use updated BREAK_DURATION
-            });
-            remainingTime = BREAK_DURATION / 1000; // Use updated BREAK_DURATION
+            remainingTime = BREAK_DURATION / 1000; // Prepare for the break timer
+            showNotification("Focus Session Complete!", "Time for a break!");
+            startBreak(BREAK_DURATION / 1000); // Start break timer
         } else {
             chrome.runtime.sendMessage({
                 action: "updateTimer",
@@ -58,7 +67,7 @@ function startFocusSession(duration) {
 function startBreak(duration) {
     clearTimeout(currentTimer);
     paused = false;
-    remainingTime = duration * 1000;
+    remainingTime = duration * 1000; // Convert to milliseconds
     timerName = "breakTimer";
     startTime = Date.now();
     let endTime = startTime + remainingTime;
@@ -75,11 +84,9 @@ function startBreak(duration) {
                 action: "timerComplete",
                 message: "Break Time Over! Back to work!"
             });
-            chrome.runtime.sendMessage({
-                action: 'updateTimer',
-                time: formatTime(FOCUS_DURATION / 1000) // Use updated FOCUS_DURATION
-            });
-            remainingTime = FOCUS_DURATION / 1000; // Use updated FOCUS_DURATION
+            remainingTime = FOCUS_DURATION / 1000; // Prepare for the focus timer
+            showNotification("Break Time Over!", "Back to work!");
+            startFocusSession(FOCUS_DURATION / 1000); // Start focus timer
         } else {
             chrome.runtime.sendMessage({
                 action: "updateTimer",

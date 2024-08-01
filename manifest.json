@@ -16,5 +16,9 @@
     },
     "icons": {
         "128": "icons/icon128.png"
-    }
+    },
+    "web_accessible_resources": [{
+        "resources": ["sounds/alert.mp3"],
+        "matches": ["<all_urls>"]
+    }]
 }

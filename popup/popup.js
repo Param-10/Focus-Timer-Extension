@@ -9,7 +9,6 @@ let focusDurationInput = document.getElementById('focusDuration');
 let breakDurationInput = document.getElementById('breakDuration');
 let saveSettingsBtn = document.getElementById('saveSettings');
 
-let alertSound = new Audio(chrome.runtime.getURL('sounds/alert.mp3'));
 let timerName = ""; // To keep track of which timer is currently running
 
 function startTimer(duration, timerNameParam) {
@@ -57,7 +56,9 @@ function resetTimer() {
             chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
                 let defaultFocusTime = formatTime(data.focusDuration || 25 * 60);
                 let defaultBreakTime = formatTime(data.breakDuration || 5 * 60);
-                if (timerDisplay) timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
+                if (timerDisplay) {
+                    timerDisplay.textContent = (timerName === 'focusTimer') ? defaultFocusTime : defaultBreakTime;
+                }
             });
         }
     });
@@ -127,17 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Function to play sound
-function playSound() {
-    alertSound.play();
-}
-
-// Listen for messages from background script to update the timer and play sound
+// Listen for messages from background script to update the timer display
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.action === 'playSound') {
-        playSound();
-        sendResponse({ status: 'sound played' });
-    } else if (request.action === "updateTimer") {
+    if (request.action === "updateTimer") {
         if (timerDisplay) {
             timerDisplay.textContent = request.time;
         }
@@ -145,7 +138,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (messageDisplay) {
             messageDisplay.textContent = request.message;
         }
-        playSound();
 
         // Automatically start the next timer (focus or break)
         chrome.storage.sync.get(['focusDuration', 'breakDuration'], (data) => {
