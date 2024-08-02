@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Focus Timer",
+    "name": "Focus Timer PRO",
     "version": "1.0.2",
-    "description": "A focus timer with notifications and sound alerts",
+    "description": "A free to use focus timer with notifications and sound alerts",
     "permissions": [
         "storage",
         "notifications"
