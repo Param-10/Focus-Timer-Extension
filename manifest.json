@@ -1,24 +1,42 @@
 {
-    "manifest_version": 3,
-    "name": "Focus Timer PRO",
-    "version": "1.2",
-    "description": "A free Focus Timer with notifications and sound alerts. This will help you to focus on your tasks, prevents any distractions, boosts your productivity and quality of work.",
-    "permissions": [
-        "storage",
-        "notifications"
-    ],
-    "background": {
-        "service_worker": "background-core.js"
-    },
-    "action": {
-        "default_popup": "popup/popup.html",
-        "default_icon": "icons/icon128.png"
-    },
-    "icons": {
-        "128": "icons/icon128.png"
-    },
-    "web_accessible_resources": [{
-        "resources": ["sounds/alert.mp3"],
-        "matches": ["<all_urls>"]
-    }]
+  "manifest_version": 3,
+  "name": "Focus Timer PRO",
+  "version": "2.0.0",
+  "description": "A gorgeous cyberpunk Pomodoro & Mindfulness Timer with rich sound alerts and reminders to boost your focus, prevent distraction, and relieve screen fatigue.",
+  "permissions": [
+    "storage",
+    "notifications",
+    "alarms",
+    "offscreen"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["sounds/alert.mp3"],
+      "matches": ["chrome-extension://*/*"],
+      "use_dynamic_url": false
+    }
+  ]
 }
