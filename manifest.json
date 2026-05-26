@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Focus Timer PRO",
   "version": "2.0.0",
-  "description": "A gorgeous cyberpunk Pomodoro & Mindfulness Timer with rich sound alerts and reminders to boost your focus, prevent distraction, and relieve screen fatigue.",
+  "description": "Pomodoro & mindfulness timer with auto-cycling sessions, break reminders, and sound alerts to boost focus and relieve fatigue.",
   "permissions": [
     "storage",
     "notifications",
