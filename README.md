@@ -2,15 +2,17 @@
 
 A quiet Pomodoro timer for your own focus sessions. Warm white, simple controls, no account or tracking.
 
-## Use in Dia
+## Load unpacked
 
-1. Open `dia://extensions` in a separate Dia window.
+Works in Chrome and other Chromium browsers (Edge, Brave, Arc, and similar).
+
+1. Open `chrome://extensions` (in Edge, `edge://extensions`).
 2. Turn on **Developer mode**, then choose **Load unpacked**.
-3. Select this `Focus-Timer-Extension` folder (the folder containing `manifest.json`).
-4. Use **Extensions → Pin Extensions** to pin **Focus**.
-5. Open **Focus** and press Start. It pings when the time is up.
+3. Select this folder (the one that contains `manifest.json`).
+4. Pin **Focus** from the extensions menu.
+5. Click **Focus** and press Start. It pings when the time is up.
 
-Keep this folder in place: Dia loads the extension from it. If an older copy is installed, disable it to avoid two timers.
+Keep this folder in place: the browser loads the extension from it. If an older copy is installed, disable it to avoid two timers.
 
 ## Your sessions
 
@@ -21,7 +23,7 @@ Keep this folder in place: Dia loads the extension from it. If an older copy is 
 - Settings save as you change them. Duration changes apply to the next session.
 - Automatic cycling is off on a fresh install. Existing preferences survive updates.
 - After an overdue session, reopening the browser or popup recovers the completion. A session overdue by a minute or more does not automatically start another session.
-- Browser alarms cannot wake a sleeping computer or play while Dia is fully quit. Alerts can be delayed; system notification settings may suppress notifications.
+- Browser alarms cannot wake a sleeping computer or play while the browser is fully quit. Alerts can be delayed; system notification settings may suppress notifications.
 
 All settings and timer state stay in the browser's local extension storage. Permissions cover local storage, alarms, notifications, and a hidden audio document. No website access or browsing history permission is requested.
 
