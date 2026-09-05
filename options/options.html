@@ -1,88 +1,45 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mindful Focus Options Panel</title>
-  <link rel="stylesheet" href="options.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Focus settings</title>
+  <link rel="stylesheet" href="../popup/popup.css">
 </head>
-<body>
-  <div id="container">
+<body class="options-page">
+  <main class="app">
     <header>
-      <h1 id="title">Mindful Focus</h1>
-      <span class="version-badge">v2.0</span>
+      <h1 id="settingsTitle">Settings</h1>
     </header>
-
-    <main>
-      <section class="options-card">
-        <h2 class="section-title">Control Settings</h2>
-
-        <!-- Focus Duration -->
-        <div class="setting-row">
-          <div class="setting-label-row">
-            <label for="focusDuration">Focus Duration</label>
-            <span class="setting-value"><span id="focusDurationVal">25</span> min</span>
+    <section id="settings" aria-labelledby="settingsTitle">
+      <form id="settingsForm" autocomplete="off">
+        <div class="duration-row">
+          <label for="focusDuration">Focus</label>
+          <div class="duration-input">
+            <input id="focusDuration" name="focusDuration" type="number" min="1" max="120" step="1" required value="25" inputmode="numeric">
+            <span>min</span>
           </div>
-          <input type="range" id="focusDuration" min="1" max="120" value="25" class="custom-slider">
         </div>
-
-        <!-- Break Duration -->
-        <div class="setting-row">
-          <div class="setting-label-row">
-            <label for="breakDuration">Break Duration</label>
-            <span class="setting-value"><span id="breakDurationVal">5</span> min</span>
+        <div class="duration-row">
+          <label for="breakDuration">Break</label>
+          <div class="duration-input">
+            <input id="breakDuration" name="breakDuration" type="number" min="1" max="30" step="1" required value="5" inputmode="numeric">
+            <span>min</span>
           </div>
-          <input type="range" id="breakDuration" min="1" max="30" value="5" class="custom-slider">
         </div>
-
-        <hr class="divider">
-
-        <!-- Audio Alerts Toggle -->
-        <div class="setting-row toggle-row">
-          <div class="setting-info">
-            <label for="soundAlerts">Audio Alerts</label>
-            <span class="setting-subtext">Play chime when sessions end</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="soundAlerts" checked>
-            <span class="slider round"></span>
-          </label>
-        </div>
-
-        <!-- Mindfulness Toggle -->
-        <div class="setting-row toggle-row">
-          <div class="setting-info">
-            <label for="mindfulnessReminders">Mindful Prompts</label>
-            <span class="setting-subtext">Periodic breathing & eye-care prompts</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="mindfulnessReminders">
-            <span class="slider round"></span>
-          </label>
-        </div>
-
-        <!-- Auto-Cycle Toggle -->
-        <div class="setting-row toggle-row">
-          <div class="setting-info">
-            <label for="autoCycle">Auto-Cycle Sessions</label>
-            <span class="setting-subtext">Automatically start the next session when one ends</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="autoCycle" checked>
-            <span class="slider round"></span>
-          </label>
-        </div>
-
-        <div id="toastMessage" class="toast-hidden">Settings instantly saved and synced!</div>
-      </section>
-
-      <!-- Cool sci-fi design elements -->
-      <footer class="footer-info">
-        <p>Built with mindfulness by <span class="accent-text">Paramveer Singh</span></p>
-        <p class="sub-footer">Part of the Mindful Focus Productivity suite.</p>
-      </footer>
-    </main>
-  </div>
-  <script src="options.js"></script>
+        <label class="setting">
+          <span>Ping when done</span>
+          <input id="soundAlerts" type="checkbox" role="switch">
+        </label>
+        <label class="setting">
+          <span>Auto-start next</span>
+          <input id="autoCycle" type="checkbox" role="switch">
+        </label>
+      </form>
+      <p id="saved" role="status"></p>
+    </section>
+    <p id="error" role="alert" hidden></p>
+  </main>
+  <script src="../popup/popup.js"></script>
 </body>
 </html>

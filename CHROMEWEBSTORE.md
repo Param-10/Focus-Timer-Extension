@@ -1,46 +1,53 @@
-# Chrome Web Store Listing — Mindful Focus Timer
+# Chrome Web Store Listing — Focus
 
-> Last Updated: 2026-05-26
+> Last Updated: 2026-09-05
 
 ## Store Listing
 
 **Extension Name**
-Mindful Focus Timer
+Focus
 
 **Short Description**
-A gorgeous cyberpunk Pomodoro & Mindfulness Timer with rich sound alerts and reminders to boost focus and relieve fatigue.
+Time a focus session or a short break, then get a ping when it’s done. Local, simple, and yours.
 
 **Detailed Description**
-Elevate your productivity and maintain physical well-being with Mindful Focus Timer, a premium cyberpunk-themed Pomodoro extension designed for creators, developers, and professional screen-workers.
+Focus is a quiet timer for work sessions and short breaks. Start it, close the window, and it still finishes — then it pings you when time is up.
 
-Built around the scientifically proven Pomodoro Technique (alternating deep focus with restorative breaks), this extension seamlessly blends tactical task focus with physical mindfulness reminders.
+FEATURES
+• 25-minute focus and 5-minute break by default, or set your own lengths
+• Pause, resume, or end a session from the toolbar popup
+• Optional chime and desktop notice when a session ends
+• Optional auto-start of the next focus or break
+• Keeps running after you close the popup
+• Everything stays on this device — no account, no tracking
 
-Key Features:
-- Cyberpunk Glassmorphism UI: An interactive, visual centerpiece with a glowing circular SVG countdown ring that breathes and shrinks as time elapses.
-- Epic Sound Alerts: High-quality audio alert chimes that play reliably upon timer completion, even when the popup is closed.
-- Stateless Architecture: Engine backed by Chrome Alarms and Storage. Your sessions never pause, glitch, or freeze when the background worker goes to sleep.
-- Custom Durations: Instantly adjust focus and break lengths in a single click via range sliders with instant reactive feedback.
-- Mindful Prompts: Toggle periodic notifications delivering hand-crafted breathing cues, eye exercises (20-20-20 rule), and physical stretches to fight screen fatigue.
-- Sync-Ready Options Panel: A beautiful fullscreen options page that mirrors your settings and stays perfectly in sync with the popup in real-time.
+HOW TO USE
+1. Pin Focus in your toolbar and click the icon
+2. Choose Focus or Break, then press Start
+3. Close the popup if you want — the timer keeps going
+4. When time is up, you’ll get a notice and, if sound is on, a short chime
+5. Open Settings to change durations, the end ping, or auto-start
 
-How to Use:
-1. Click the Mindful Focus icon in your toolbar to open the holographic dashboard.
-2. Select "Start Focus" to begin your productivity sprint (default 25 min) or click the Gear icon to adjust durations instantly.
-3. Once the circular progress bar completes, a rich notification will fire, and an alert sound will play.
-4. Take a restorative rest with "Start Break" (default 5 min). Read the custom mindfulness tip to stretch or rest your eyes.
-5. Repeat to build healthy, sustainable focus cycles!
+PRIVACY
+Focus does not collect personal data or browsing history. Your timer and settings stay on your device. Removing the extension deletes them.
 
-Privacy & Security:
-We believe your data is your own. Mindful Focus Timer operates 100% locally. No user analytics, personal identification details, or browsing data are ever collected, transmitted, or shared. Everything is stored securely within your own browser storage.
+PERMISSIONS
+• Storage — remembers your durations, sound preference, and whether a session is running
+• Notifications — tells you when a focus or break ends if the popup is closed
+• Alarms — finishes the session on time even after you close the popup
+• Offscreen — plays the optional end chime after the popup is closed
 
-Support & Feedback:
-Having issues or want to suggest features? Check out our GitHub issues page or email our support desk.
+SUPPORT
+Questions or bugs: https://github.com/Param-10/Focus-Timer-Extension/issues
+Privacy: https://github.com/Param-10/Focus-Timer-Extension/blob/main/PRIVACY.md
+
+Version 3.0.0 — simpler square timer, ping when done, stretch reminders removed from the interface.
 
 **Category**
 Productivity
 
 **Single Purpose**
-A customizable Pomodoro focus timer with automated rest intervals and mindfulness reminders to enhance user productivity and wellness.
+A local timer for focus sessions and short breaks that pings when time is up.
 
 **Primary Language**
 English
@@ -52,24 +59,29 @@ English
 | Asset | Dimensions | Status | Filename |
 |-------|-----------|--------|----------|
 | Store Icon | 128×128 PNG | ✅ Ready | `icons/icon128.png` |
-| Screenshot 1 | 1280×800 or 640×400 | ⬜ Not created | (Dashboard view: active focus session) |
-| Screenshot 2 | 1280×800 or 640×400 | ⬜ Not created | (Configuration drawer: sliders & toggles) |
-| Screenshot 3 | 1280×800 or 640×400 | ⬜ Not created | (Options page: desktop configuration dashboard) |
-| Screenshot 4 | 1280×800 or 640×400 | ⬜ Not created | (Rich notifications: mindfulness prompt popup) |
-| Small Promo Tile | 440×280 | ⬜ Not created | (Cyberpunk marquee branding) |
+| Screenshot 1 | 1280×800 or 640×400 | 🟡 Needs update | Idle popup: 25:00, Focus/Break, Start |
+| Screenshot 2 | 1280×800 or 640×400 | 🟡 Needs update | Running session: remaining time, Pause, End |
+| Screenshot 3 | 1280×800 or 640×400 | 🟡 Needs update | Settings: durations, ping, auto-start |
+| Screenshot 4 | 1280×800 or 640×400 | ⬜ Not created | |
+| Screenshot 5 | 1280×800 or 640×400 | ⬜ Not created | |
+| Small Promo Tile | 440×280 | ⬜ Not created | |
+| Marquee Promo Tile | 1400×560 | ⬜ Not created | |
+
+### Screenshot Notes
+Capture the current square popup (360×360 content), not the older tall layout or any cyberpunk/glass UI. Show the timer in use, not only empty chrome. Do not use phone mockups.
 
 ---
 
 ## Permissions Justification
 
-Every permission in `manifest.json` is strictly required to provide local, user-requested features. No network permissions are requested.
+Every permission in `manifest.json` is required for a user-facing timer feature. No host permissions or website access are requested.
 
 | Permission | Type | Justification |
 |------------|------|---------------|
-| `storage` | permissions | Allows the extension to persist and synchronize user configurations (durations, audio levels, mindfulness settings) and current active timer states across browser sessions. |
-| `notifications` | permissions | Triggers native desktop notification cards when a focus session or rest break completes, keeping the user updated without needing to leave their active window. |
-| `alarms` | permissions | Establishes a robust, browser-level scheduler that fires Pomodoro and mindfulness events precisely even when the service worker is terminated by the browser. |
-| `offscreen` | permissions | Creates a temporary, sandboxed offscreen helper to play the audible alerts (alert.mp3) upon timer completion, working flawlessly even when the popup window is closed. |
+| `storage` | permissions | Saves focus and break lengths, whether the end chime is on, auto-start, and the current session (running, paused, remaining time) so the timer continues after the popup is closed. |
+| `notifications` | permissions | Shows a desktop notice when a focus or break ends so you know time is up without keeping the popup open. |
+| `alarms` | permissions | Schedules the exact end of the current session so it still completes if the popup is closed or the extension is put to sleep. |
+| `offscreen` | permissions | Plays a short local chime when a session ends, because the popup cannot play sound after it is closed. |
 
 ---
 
@@ -79,7 +91,7 @@ Every permission in `manifest.json` is strictly required to provide local, user-
 
 **Does the extension collect user data?** No
 
-Mindful Focus Timer operates entirely within the local sandbox of the user's browser. It does not use any remote servers, databases, or analytics engines.
+Focus stores timer preferences and session state only in the browser’s local extension storage on this device. It does not use accounts, analytics, cookies, or network requests. It does not read websites or browsing history.
 
 ### Data Use Certification
 - [x] Data is NOT sold to third parties
@@ -93,7 +105,7 @@ Mindful Focus Timer operates entirely within the local sandbox of the user's bro
 **Privacy Policy URL**
 https://github.com/Param-10/Focus-Timer-Extension/blob/main/PRIVACY.md
 
-*(See the `PRIVACY.md` file in our repository for the full text, which certified that no data is collected, shared, or transferred).*
+Confirm this URL loads before submission. The text in `PRIVACY.md` must match this disclosure (no off-device transmission, no analytics).
 
 ---
 
@@ -125,5 +137,21 @@ https://github.com/Param-10/Focus-Timer-Extension
 
 | Version | Date | Changes | Status |
 |---------|------|---------|--------|
-| 2.0 | 2026-05-26 | Complete architectural modernization to MV3: stateless service worker timer, background alarms scheduler, chrome.offscreen audio player, and a premium glassmorphic visual redesign with interactive sliders. | Draft / Ready for Upload |
-| 1.2 | 2025-04-10 | Pre-release with basic Pomodoro logic and static notifications. | Published |
+| 3.0.0 | 2026-09-05 | Square popup, even spacing, ping when done, stretch reminder removed from the UI, settings save as you change them. | Draft |
+| 2.0 | 2026-05-26 | Timer continues after the popup closes; optional end sound and notifications. | Draft |
+| 1.2 | 2025-04-10 | Basic focus and break timer with notifications. | Published |
+
+---
+
+## Review Notes
+
+### Known Issues / Limitations
+- Browser alarms cannot wake a sleeping computer or fire while the browser is fully quit. Notices can be delayed; the user’s system may suppress notifications.
+- Screenshots in the developer dashboard still need to be recaptured against the 3.0.0 UI.
+- Unused `sounds/alert.mp3` is excluded from the store ZIP; the packaged chime is `sounds/chime.wav`.
+
+### Rejection History
+<!-- If applicable:
+| Date | Reason | Fix Applied | Resubmitted |
+|------|--------|-------------|-------------|
+-->

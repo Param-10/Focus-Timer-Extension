@@ -1,152 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mindful Focus Timer</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Focus</title>
   <link rel="stylesheet" href="popup.css">
 </head>
 <body>
-  <div id="container">
-    
-    <!-- Header with Gear Icon for settings toggle -->
+  <main class="app">
     <header>
-      <h1 id="title">Mindful Focus</h1>
-      <button id="toggleSettingsBtn" aria-label="Toggle Settings" class="icon-btn">
-        <svg viewBox="0 0 24 24" width="20" height="20">
-          <path fill="currentColor" d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.488.488 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87a.49.49 0 0 0 .12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .43-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.49.49 0 0 0-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
-        </svg>
-      </button>
+      <h1 id="heading">Focus</h1>
+      <button id="settingsButton" class="text-button" type="button" aria-expanded="false" aria-controls="settings">Settings</button>
     </header>
 
-    <!-- Main timer screen -->
-    <main id="mainScreen">
-      <!-- Circular Progress Ring Centerpiece -->
-      <div class="timer-circle-wrapper">
-        <svg class="progress-ring" width="200" height="200">
-          <!-- Gradient Definition MUST come before the element that references it -->
-          <defs>
-            <linearGradient id="cyanBlueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#00f2fe" />
-              <stop offset="100%" stop-color="#4facfe" />
-            </linearGradient>
-            <linearGradient id="pinkOrangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stop-color="#ff0844" />
-              <stop offset="100%" stop-color="#ffb199" />
-            </linearGradient>
-          </defs>
-          <circle class="progress-ring-bg" stroke="rgba(255, 255, 255, 0.04)" stroke-width="8" fill="transparent" r="84" cx="100" cy="100"/>
-          <circle id="progressRingBar" class="progress-ring-bar" stroke="url(#cyanBlueGrad)" stroke-width="8" stroke-dasharray="527.79" stroke-dashoffset="0" fill="transparent" r="84" cx="100" cy="100"/>
-        </svg>
-        <div class="timer-text-container">
-          <span id="timerStateLabel" class="state-label">READY</span>
-          <h2 id="timer">25:00</h2>
+    <section id="timerView" aria-label="Session timer">
+      <div class="timer-face">
+        <div id="timer" role="timer" aria-label="Time remaining">25:00</div>
+        <div class="mode-switch" role="group" aria-label="Session type">
+          <button id="focusMode" type="button" aria-pressed="true">Focus</button>
+          <button id="breakMode" type="button" aria-pressed="false">Break</button>
+        </div>
+        <div class="session-meta">
+          <p id="stateLabel" class="status" role="status"></p>
+          <div id="progressTrack" class="progress-track"><div id="progress"></div></div>
         </div>
       </div>
-
-      <!-- State message placeholder -->
-      <div id="messageContainer">
-        <p id="message"></p>
+      <div class="actions">
+        <div class="controls">
+          <button id="primary" class="primary" type="button" disabled>Start</button>
+          <button id="reset" class="ghost" type="button" hidden>End</button>
+        </div>
+        <p id="footer" class="hint"></p>
       </div>
+    </section>
 
-      <!-- Dynamic Buttons Container (revealed via class toggles) -->
-      <div id="controls" class="state-idle">
-        <!-- Idle State Buttons -->
-        <div class="btn-group idle-controls">
-          <button id="startFocus" class="primary-btn pulse-glow">
-            <span>Start Focus</span>
-          </button>
-          <button id="startBreak" class="secondary-btn">
-            <span>Start Break</span>
-          </button>
-        </div>
-
-        <!-- Running State Buttons -->
-        <div class="btn-group running-controls">
-          <button id="pause" class="warning-btn">
-            <span>Pause</span>
-          </button>
-          <button id="resetRunning" class="danger-btn">
-            <span>Reset</span>
-          </button>
-        </div>
-
-        <!-- Paused State Buttons -->
-        <div class="btn-group paused-controls">
-          <button id="resume" class="success-btn">
-            <span>Resume</span>
-          </button>
-          <button id="resetPaused" class="danger-btn">
-            <span>Reset</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Mindfulness Quick Tip Section -->
-      <section id="tipSection" class="hidden">
-        <div class="tip-card">
-          <div class="tip-header">
-            <svg viewBox="0 0 24 24" width="16" height="16">
-              <path fill="currentColor" d="M12 3a9 9 0 0 0-9 9c0 2.21.8 4.21 2.12 5.76L3 21h4.24l1.24-1.24A8.96 8.96 0 0 0 12 21a9 9 0 0 0 9-9 9 9 0 0 0-9-9zm0 15a6 6 0 1 1 0-12 6 6 0 0 1 0 12z"/>
-            </svg>
-            <span>Mindfulness Tip</span>
+    <section id="settings" hidden aria-labelledby="heading">
+      <form id="settingsForm" autocomplete="off">
+        <div class="duration-row">
+          <label for="focusDuration">Focus</label>
+          <div class="duration-input">
+            <input id="focusDuration" name="focusDuration" type="number" min="1" max="120" step="1" required value="25" inputmode="numeric">
+            <span>min</span>
           </div>
-          <p id="tipText">Press Start Focus to begin mindfulness exercises during breaks!</p>
         </div>
-      </section>
-    </main>
-
-    <!-- sliding / folding Settings Drawer -->
-    <div id="settingsDrawer" class="drawer-closed">
-      <div class="drawer-header">
-        <h3>Timer Configuration</h3>
-      </div>
-      <div class="drawer-body">
-        <!-- Focus Duration -->
-        <div class="setting-row">
-          <div class="setting-label-row">
-            <label for="focusDuration">Focus Duration</label>
-            <span class="setting-value"><span id="focusDurationVal">25</span> min</span>
+        <div class="duration-row">
+          <label for="breakDuration">Break</label>
+          <div class="duration-input">
+            <input id="breakDuration" name="breakDuration" type="number" min="1" max="30" step="1" required value="5" inputmode="numeric">
+            <span>min</span>
           </div>
-          <input type="range" id="focusDuration" min="1" max="120" value="25" class="custom-slider">
         </div>
+        <label class="setting">
+          <span>Ping when done</span>
+          <input id="soundAlerts" type="checkbox" role="switch">
+        </label>
+        <label class="setting">
+          <span>Auto-start next</span>
+          <input id="autoCycle" type="checkbox" role="switch">
+        </label>
+      </form>
+    </section>
 
-        <!-- Break Duration -->
-        <div class="setting-row">
-          <div class="setting-label-row">
-            <label for="breakDuration">Break Duration</label>
-            <span class="setting-value"><span id="breakDurationVal">5</span> min</span>
-          </div>
-          <input type="range" id="breakDuration" min="1" max="30" value="5" class="custom-slider">
-        </div>
-
-        <!-- Audio Alerts Toggle -->
-        <div class="setting-row toggle-row">
-          <div class="setting-info">
-            <label for="soundAlerts">Sound Alerts</label>
-            <span class="setting-subtext">Play chime when sessions end</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="soundAlerts" checked>
-            <span class="slider round"></span>
-          </label>
-        </div>
-
-        <!-- Mindfulness Toggle -->
-        <div class="setting-row toggle-row">
-          <div class="setting-info">
-            <label for="mindfulnessReminders">Mindful Prompts</label>
-            <span class="setting-subtext">Periodic breathing & eye-care prompts</span>
-          </div>
-          <label class="switch">
-            <input type="checkbox" id="mindfulnessReminders">
-            <span class="slider round"></span>
-          </label>
-        </div>
-      </div>
-    </div>
-
-  </div>
+    <p id="error" role="alert" hidden></p>
+  </main>
   <script src="popup.js"></script>
 </body>
 </html>

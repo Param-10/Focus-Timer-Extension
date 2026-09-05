@@ -1,311 +1,170 @@
-// Mindful Focus Timer - Background Service Worker (Stateless)
-
-const MINDFULNESS_TIPS = [
-  "Take 3 deep, slow breaths. Notice the sensation of air entering and leaving.",
-  "Stand up and stretch for 15 seconds. Roll your shoulders and release tension.",
-  "Look away from the screen! Focus on an object at least 20 feet away for 20 seconds (20-20-20 rule).",
-  "Do a quick body scan. Soften your jaw, drop your shoulders, and relax your hands.",
-  "Hydration check! Take a sip of water and enjoy the refreshing taste.",
-  "Take a moment to feel the weight of your feet firmly grounded on the floor.",
-  "Close your eyes and listen to the sounds in your environment for 15 seconds.",
-  "Acknowledge one thing you are grateful for in this present moment."
-];
-
-// ─── Installation / Startup ─────────────────────────────────────────────────
-
-chrome.runtime.onInstalled.addListener(async () => {
-  const existing = await chrome.storage.local.get([
-    'focusDuration', 'breakDuration', 'soundAlerts', 'mindfulnessReminders', 'autoCycle'
-  ]);
-
-  // Only set defaults for keys that don't already exist (preserves user prefs across updates)
-  const toSet = {};
-  if (existing.focusDuration === undefined) toSet.focusDuration = 25 * 60;
-  if (existing.breakDuration === undefined) toSet.breakDuration = 5 * 60;
-  if (existing.soundAlerts === undefined) toSet.soundAlerts = true;
-  if (existing.mindfulnessReminders === undefined) toSet.mindfulnessReminders = false;
-  if (existing.autoCycle === undefined) toSet.autoCycle = true; // Default: auto-cycle on
-
-  // Always reset timer state on install/update to prevent stale "running" state
-  toSet.timerState = 'idle';
-  toSet.timerType = 'focus';
-  toSet.remainingTime = 0;
-  toSet.endTime = 0;
-  toSet.duration = 0;
-
-  await chrome.storage.local.set(toSet);
-
-  // Clear any leftover alarms from previous install
-  await chrome.alarms.clearAll();
-
-  // Read the FINAL mindfulness value (after set) and set up alarm if needed
-  const finalData = await chrome.storage.local.get('mindfulnessReminders');
-  if (finalData.mindfulnessReminders) {
-    chrome.alarms.create('mindfulnessAlarm', { periodInMinutes: 20 });
-  }
+// Local state survives popup closure and service-worker suspension.
+const DEFAULTS = { focusDuration: 1500, breakDuration: 300, soundAlerts: true, autoCycle: false, mindfulnessReminders: false, timerState: 'idle', timerType: 'focus', endTime: 0, duration: 0, remainingTime: 0, lastMessage: '' };
+let queue = Promise.resolve();
+function serial(task) { const next = queue.then(task); queue = next.catch(() => { }); return next; }
+async function initialize() {
+    const existing = await chrome.storage.local.get(null);
+    const missing = Object.fromEntries(Object.entries(DEFAULTS).filter(([key]) => existing[key] === undefined));
+    if (Object.keys(missing).length)
+        await chrome.storage.local.set(missing);
+    await reconcile();
+}
+async function syncReminder() {
+    const state = await chrome.storage.local.get(null);
+    const enabled = state.mindfulnessReminders && state.timerState === 'running' && state.timerType === 'focus';
+    if (enabled) {
+        if (!await chrome.alarms.get('mindfulnessAlarm'))
+            await chrome.alarms.create('mindfulnessAlarm', { periodInMinutes: 20 });
+    }
+    else
+        await chrome.alarms.clear('mindfulnessAlarm');
+}
+async function badge() {
+    const state = await chrome.storage.local.get(null);
+    await chrome.action.setBadgeBackgroundColor({ color: '#1f1e1b' });
+    await chrome.action.setBadgeText({ text: state.timerState === 'paused' ? 'Ⅱ' : state.timerState === 'running' ? (state.timerType === 'focus' ? '•' : 'B') : '' });
+    await chrome.action.setTitle({ title: state.timerState === 'idle' ? 'Focus' : `${state.timerType === 'focus' ? 'Focus' : 'Break'} · ${state.timerState}` });
+}
+async function start(type) {
+    const state = await chrome.storage.local.get(null);
+    const duration = type === 'focus' ? state.focusDuration : state.breakDuration;
+    await chrome.alarms.clear('sessionAlarm');
+    const endTime = Date.now() + duration * 1000;
+    await chrome.storage.local.set({ timerState: 'running', timerType: type, endTime, duration, remainingTime: 0, lastMessage: '' });
+    await chrome.alarms.create('sessionAlarm', { when: endTime });
+    await syncReminder();
+    await badge();
+}
+async function playSound() {
+    const state = await chrome.storage.local.get('soundAlerts');
+    if (!state.soundAlerts)
+        return;
+    try {
+        if (await chrome.offscreen.hasDocument())
+            return;
+        await chrome.offscreen.createDocument({ url: 'offscreen/offscreen.html', reasons: ['AUDIO_PLAYBACK'], justification: 'Play a short chime when a session ends.' });
+    }
+    catch { /* Sound availability must never block the timer transition. */ }
+}
+async function notify(title, message) {
+    try {
+        await chrome.notifications.create({ type: 'basic', iconUrl: chrome.runtime.getURL('icons/icon128.png'), title, message, priority: 0 });
+    }
+    catch { /* System notification preferences may suppress alerts. */ }
+}
+async function complete() {
+    const state = await chrome.storage.local.get(null);
+    if (state.timerState !== 'running' || state.endTime > Date.now())
+        return;
+    const wasFocus = state.timerType === 'focus';
+    const nextType = wasFocus ? 'break' : 'focus';
+    const message = wasFocus ? 'Focus complete. Take a break.' : 'Break complete. Ready when you are.';
+    await chrome.alarms.clear('sessionAlarm');
+    await chrome.storage.local.set({ timerState: 'idle', timerType: nextType, endTime: 0, remainingTime: 0, duration: 0, lastMessage: message });
+    // A late alarm after sleep should not start an unattended chain of sessions.
+    if (state.autoCycle && Date.now() - state.endTime < 60000)
+        await start(nextType);
+    await syncReminder();
+    await badge();
+    await notify(wasFocus ? 'Focus complete' : 'Break complete', wasFocus ? 'Take a moment away from the screen.' : 'Start again when you’re ready.');
+    await playSound();
+}
+async function reconcile() {
+    const state = await chrome.storage.local.get(null);
+    if (state.timerState === 'running') {
+        if (state.endTime <= Date.now())
+            await complete();
+        else if (!await chrome.alarms.get('sessionAlarm'))
+            await chrome.alarms.create('sessionAlarm', { when: state.endTime });
+    }
+    else
+        await chrome.alarms.clear('sessionAlarm');
+    await syncReminder();
+    await badge();
+}
+async function control(request) {
+    if (request.action === 'sync') {
+        await initialize();
+        return;
+    }
+    const state = await chrome.storage.local.get(null);
+    switch (request.action) {
+        case 'startFocus':
+        case 'startBreak':
+            if (state.timerState !== 'idle')
+                return;
+            await start(request.action === 'startFocus' ? 'focus' : 'break');
+            break;
+        case 'selectMode':
+            if (state.timerState !== 'idle' || !['focus', 'break'].includes(request.mode))
+                return;
+            await chrome.storage.local.set({ timerType: request.mode, lastMessage: '' });
+            break;
+        case 'pause':
+            if (state.timerState !== 'running')
+                return;
+            if (state.endTime <= Date.now()) {
+                await complete();
+                return;
+            }
+            await chrome.alarms.clear('sessionAlarm');
+            await chrome.storage.local.set({ timerState: 'paused', remainingTime: Math.max(0, Math.ceil((state.endTime - Date.now()) / 1000)), endTime: 0 });
+            break;
+        case 'resume':
+            if (state.timerState !== 'paused')
+                return;
+            {
+                const endTime = Date.now() + state.remainingTime * 1000;
+                await chrome.storage.local.set({ timerState: 'running', endTime, remainingTime: 0 });
+                await chrome.alarms.create('sessionAlarm', { when: endTime });
+            }
+            break;
+        case 'reset':
+            await chrome.alarms.clear('sessionAlarm');
+            await chrome.storage.local.set({ timerState: 'idle', endTime: 0, remainingTime: 0, duration: 0, lastMessage: '' });
+            break;
+        case 'saveSettings': {
+            const value = request.settings;
+            if (!value || !Number.isInteger(value.focusDuration) || value.focusDuration < 60 || value.focusDuration > 7200 || value.focusDuration % 60 || !Number.isInteger(value.breakDuration) || value.breakDuration < 60 || value.breakDuration > 1800 || value.breakDuration % 60 || ['soundAlerts', 'autoCycle', 'mindfulnessReminders'].some(k => typeof value[k] !== 'boolean'))
+                throw new Error('Invalid settings');
+            await chrome.storage.local.set(Object.fromEntries(['focusDuration', 'breakDuration', 'soundAlerts', 'autoCycle', 'mindfulnessReminders'].map(k => [k, value[k]])));
+            break;
+        }
+        default: throw new Error('Unknown action');
+    }
+    await syncReminder();
+    await badge();
+}
+chrome.runtime.onInstalled.addListener(() => { serial(initialize).catch(() => { }); });
+chrome.runtime.onStartup.addListener(() => { serial(initialize).catch(() => { }); });
+chrome.alarms.onAlarm.addListener((alarm) => {
+    serial(async () => {
+        if (alarm.name === 'sessionAlarm')
+            await complete();
+        if (alarm.name === 'mindfulnessAlarm') {
+            const state = await chrome.storage.local.get(null);
+            if (state.mindfulnessReminders && state.timerState === 'running' && state.timerType === 'focus')
+                await notify('A moment to stretch', 'Relax your shoulders and look away from the screen.');
+        }
+    }).catch(() => { });
 });
-
-// ─── Mindfulness Alarm Setup ────────────────────────────────────────────────
-
-async function setupMindfulnessAlarm() {
-  await chrome.alarms.clear('mindfulnessAlarm');
-  const { mindfulnessReminders } = await chrome.storage.local.get('mindfulnessReminders');
-  if (mindfulnessReminders) {
-    chrome.alarms.create('mindfulnessAlarm', { periodInMinutes: 20 });
-  }
-}
-
-// ─── Offscreen Document Audio ────────────────────────────────────────────────
-
-// Pending audio URL, held until the offscreen document signals it's ready
-let pendingAudioUrl = null;
-
-async function hasOffscreenDocument() {
-  const existingContexts = await chrome.runtime.getContexts({
-    contextTypes: ['OFFSCREEN_DOCUMENT']
-  });
-  return existingContexts.length > 0;
-}
-
-async function playAlertSound() {
-  const { soundAlerts = true } = await chrome.storage.local.get('soundAlerts');
-  if (!soundAlerts) return;
-
-  // Don't try to spawn another if one is already open
-  if (await hasOffscreenDocument()) return;
-
-  pendingAudioUrl = chrome.runtime.getURL('sounds/alert.mp3');
-
-  try {
-    await chrome.offscreen.createDocument({
-      url: 'offscreen/offscreen.html',
-      reasons: ['AUDIO_PLAYBACK'],
-      justification: 'Alert sounds for completed focus or break periods.'
+chrome.runtime.onMessage.addListener((request, sender, respond) => {
+    if (sender.id !== chrome.runtime.id)
+        return false;
+    if (request.action === 'offscreenAudioComplete') {
+        chrome.offscreen.closeDocument().catch(() => { });
+        return false;
+    }
+    serial(async () => {
+        try {
+            await control(request);
+            respond({ ok: true });
+        }
+        catch {
+            respond({ ok: false });
+        }
     });
-    // The offscreen document will send 'offscreenReady' when its listener is registered.
-    // We respond with 'playAudio' in the onMessage handler below.
-  } catch (err) {
-    console.error('Failed to create offscreen document:', err);
-    pendingAudioUrl = null;
-  }
-}
-
-// ─── Notifications ───────────────────────────────────────────────────────────
-
-function showNotification(title, message) {
-  chrome.notifications.create({
-    type: 'basic',
-    iconUrl: chrome.runtime.getURL('icons/icon128.png'),
-    title: title,
-    message: message,
-    priority: 2
-  });
-}
-
-// ─── Alarm Handler ───────────────────────────────────────────────────────────
-
-chrome.alarms.onAlarm.addListener(async (alarm) => {
-  if (alarm.name === 'sessionAlarm') {
-    const state = await chrome.storage.local.get([
-      'timerType',
-      'timerState',
-      'focusDuration',
-      'breakDuration',
-      'autoCycle'
-    ]);
-
-    // Guard: only process if we were actually running (not paused/reset)
-    if (state.timerState !== 'running') return;
-
-    if (state.timerType === 'focus') {
-      showNotification('Focus Session Complete!', 'Time for a well-deserved break!');
-      await playAlertSound();
-
-      if (state.autoCycle !== false) {
-        // Auto-cycle to break
-        const duration = state.breakDuration || 5 * 60;
-        const endTime = Date.now() + duration * 1000;
-        await chrome.storage.local.set({
-          timerState: 'running',
-          timerType: 'break',
-          endTime: endTime,
-          duration: duration
-        });
-        chrome.alarms.create('sessionAlarm', { when: endTime });
-        chrome.runtime.sendMessage({
-          action: 'timerComplete',
-          timerType: 'break',
-          message: 'Focus complete! Break started automatically.'
-        }).catch(() => {});
-      } else {
-        // Stop after focus session
-        await chrome.storage.local.set({ timerState: 'idle', endTime: 0 });
-        chrome.runtime.sendMessage({
-          action: 'timerComplete',
-          timerType: null,
-          message: 'Focus session complete!'
-        }).catch(() => {});
-      }
-
-    } else if (state.timerType === 'break') {
-      showNotification('Break Time Over!', 'Let\'s get back to work and focus!');
-      await playAlertSound();
-
-      if (state.autoCycle !== false) {
-        // Auto-cycle back to focus
-        const duration = state.focusDuration || 25 * 60;
-        const endTime = Date.now() + duration * 1000;
-        await chrome.storage.local.set({
-          timerState: 'running',
-          timerType: 'focus',
-          endTime: endTime,
-          duration: duration
-        });
-        chrome.alarms.create('sessionAlarm', { when: endTime });
-        chrome.runtime.sendMessage({
-          action: 'timerComplete',
-          timerType: 'focus',
-          message: 'Break complete! Focus session started.'
-        }).catch(() => {});
-      } else {
-        // Stop after break
-        await chrome.storage.local.set({ timerState: 'idle', endTime: 0 });
-        chrome.runtime.sendMessage({
-          action: 'timerComplete',
-          timerType: null,
-          message: 'Break complete!'
-        }).catch(() => {});
-      }
-    }
-
-  } else if (alarm.name === 'mindfulnessAlarm') {
-    const { mindfulnessReminders } = await chrome.storage.local.get('mindfulnessReminders');
-    if (mindfulnessReminders) {
-      const tip = MINDFULNESS_TIPS[Math.floor(Math.random() * MINDFULNESS_TIPS.length)];
-      showNotification('Mindful Pause', tip);
-    }
-  }
+    return true;
 });
-
-// ─── Message Handler ─────────────────────────────────────────────────────────
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-
-  // Offscreen document signaled it is ready — now send the pending audio URL
-  if (request.action === 'offscreenReady') {
-    if (pendingAudioUrl) {
-      const urlToPlay = pendingAudioUrl;
-      pendingAudioUrl = null;
-      chrome.runtime.sendMessage({
-        action: 'playAudio',
-        source: urlToPlay,
-        volume: 0.8
-      }).catch((err) => {
-        console.warn('Could not deliver playAudio to offscreen doc:', err);
-        chrome.offscreen.closeDocument().catch(() => {});
-      });
-    }
-    return false;
-  }
-
-  // Offscreen document finished playing audio — clean it up
-  if (request.action === 'offscreenAudioComplete') {
-    pendingAudioUrl = null;
-    chrome.offscreen.closeDocument().catch(() => {});
-    return false;
-  }
-
-  // ── Timer Control Messages ────────────────────────────────────────────────
-
-  if (request.action === 'startFocus') {
-    (async () => {
-      const { focusDuration } = await chrome.storage.local.get('focusDuration');
-      const duration = request.duration || focusDuration || 25 * 60;
-      const endTime = Date.now() + duration * 1000;
-
-      await chrome.alarms.clear('sessionAlarm');
-      await chrome.storage.local.set({
-        timerState: 'running',
-        timerType: 'focus',
-        endTime: endTime,
-        duration: duration,
-        remainingTime: 0
-      });
-      chrome.alarms.create('sessionAlarm', { when: endTime });
-      sendResponse({ status: 'Focus started', endTime });
-    })();
-    return true;
-  }
-
-  if (request.action === 'startBreak') {
-    (async () => {
-      const { breakDuration } = await chrome.storage.local.get('breakDuration');
-      const duration = request.duration || breakDuration || 5 * 60;
-      const endTime = Date.now() + duration * 1000;
-
-      await chrome.alarms.clear('sessionAlarm');
-      await chrome.storage.local.set({
-        timerState: 'running',
-        timerType: 'break',
-        endTime: endTime,
-        duration: duration,
-        remainingTime: 0
-      });
-      chrome.alarms.create('sessionAlarm', { when: endTime });
-      sendResponse({ status: 'Break started', endTime });
-    })();
-    return true;
-  }
-
-  if (request.action === 'pause') {
-    (async () => {
-      const state = await chrome.storage.local.get(['endTime', 'timerState']);
-      if (state.timerState !== 'running') {
-        sendResponse({ status: 'Not running' });
-        return;
-      }
-      await chrome.alarms.clear('sessionAlarm');
-      const remainingTime = Math.max(0, Math.round((state.endTime - Date.now()) / 1000));
-      await chrome.storage.local.set({ timerState: 'paused', remainingTime });
-      sendResponse({ status: 'Paused', remainingTime });
-    })();
-    return true;
-  }
-
-  if (request.action === 'resume') {
-    (async () => {
-      const state = await chrome.storage.local.get(['remainingTime', 'timerState']);
-      if (state.timerState !== 'paused') {
-        sendResponse({ status: 'Not paused' });
-        return;
-      }
-      const remainingMs = (state.remainingTime || 60) * 1000;
-      const endTime = Date.now() + remainingMs;
-      await chrome.storage.local.set({ timerState: 'running', endTime, remainingTime: 0 });
-      chrome.alarms.create('sessionAlarm', { when: endTime });
-      sendResponse({ status: 'Resumed', endTime });
-    })();
-    return true;
-  }
-
-  if (request.action === 'reset') {
-    (async () => {
-      await chrome.alarms.clear('sessionAlarm');
-      await chrome.storage.local.set({
-        timerState: 'idle',
-        remainingTime: 0,
-        endTime: 0
-      });
-      sendResponse({ status: 'Reset' });
-    })();
-    return true;
-  }
-
-  if (request.action === 'syncMindfulness') {
-    (async () => {
-      await setupMindfulnessAlarm();
-      sendResponse({ status: 'Mindfulness synced' });
-    })();
-    return true;
-  }
-});
+// Recreate an alarm if the browser dropped it while this worker was inactive.
+serial(initialize).catch(() => { });
